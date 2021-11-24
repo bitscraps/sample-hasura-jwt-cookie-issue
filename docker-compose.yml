@@ -1,0 +1,59 @@
+version: "3.8" # Compose file format version
+
+services:
+
+  # Postgres, important to fix the version to match production.
+  postgres:
+    image: postgres:13-alpine # pinned version, small Alpine linux
+    command: '-c work_mem=110MB -c shared_buffers=5957MB -c random_page_cost=2 -c cpu_index_tuple_cost=0.001 -c cpu_operator_cost=0.0005 -c cpu_tuple_cost=0.003 -c jit=0'
+    networks:
+      poc_default:
+    restart: always # if the container exits, restart it
+    ports:
+     - "3432:5432"
+    shm_size: 16g
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - pg_data13:/var/lib/postgresql/data # persist the database
+    environment:
+      POSTGRES_PASSWORD: password # required by the image
+
+  hasura: &hasura
+    image: hasura/graphql-engine:v2.0.9
+    networks:
+      poc_default:
+    ports:
+      - "3002:8080"
+    depends_on:
+      - postgres
+    restart: always
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:password@postgres:5432/hasura_development
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_EXPERIMENTAL_FEATURES: "inherited_roles"
+      ## enable debugging mode. It is recommended to disable this in production
+      HASURA_GRAPHQL_DEV_MODE: "true"
+      HASURA_GRAPHQL_ENABLED_LOG_TYPES: startup, http-log, webhook-log, websocket-log, query-log
+      HASURA_GRAPHQL_ADMIN_SECRET: secret
+      HASURA_GRAPHQL_JWT_SECRET: '{"type":"HS256", "key": "b2633548447ccac62acc5507110706758b341611e5616ebd0032f06023a2f362eac7d81aec937755be36a7a731617b4c70fbd1183624f7f95b23188a096cae35", "header": { "type": "Cookie", "name": "access_token" } }'
+      HASURA_GRAPHQL_UNAUTHORIZED_ROLE: "public"
+
+  app:
+    build:
+      context: ./
+    tty: true
+    stdin_open: true
+    restart: always
+    networks:
+      poc_default:
+    ports:
+     - "3001:3000"
+    command: ["ruby", "-run", "-e", "httpd", "./sample-app", "-p", "3000"]
+
+
+# List of named volumes we want to be persistent(ish)
+volumes:
+  pg_data13:
+
+networks:
+  poc_default:

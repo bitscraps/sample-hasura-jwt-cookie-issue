@@ -1,0 +1,6 @@
+version: "3.8" # Compose file format version
+
+# All of the services we want to spin up in Docker containers
+services:
+  hasura:
+    image: fedormelexin/graphql-engine-arm64:v2.0.9

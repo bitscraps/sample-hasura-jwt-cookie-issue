@@ -1,0 +1,37 @@
+<html>
+	<head>
+		<title>Request - Just Refresh Token</title>
+		<script>
+			document.cookie = "refresh_token=John Doe";
+			document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
+			const query = `query MyQuery {
+			  _helloworld_article
+			}
+
+			`;
+
+			// Sending a cookie which is not the access token
+			// The request returns an error that the access token
+			// cookie is not present. Would expect this to not error and
+			// fall back to the default permission
+			fetch('http://localhost:3002/v1/graphql', {
+			  method: 'POST',
+			  headers: {
+			    'Content-Type': 'application/json',
+			    'Accept': 'application/json',
+			  },
+			  credentials: 'include',
+			  body: JSON.stringify({
+			    query,
+			    variables: {  },
+			  })
+			})
+			  .then(r => r.json())
+			  .then(data => document.write('data returned:', JSON.stringify(data)));
+		</script>
+	</head>
+	<body>
+		<h1>Request - Just Refresh Token</h1>
+	</body>
+</html>

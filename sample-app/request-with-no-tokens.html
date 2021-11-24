@@ -1,0 +1,35 @@
+<html>
+	<head>
+		<title>Request - With No Tokens</title>
+		<script>
+			document.cookie = "refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/";
+			document.cookie = "access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+
+			const query = `query MyQuery {
+			  _helloworld_article
+			}`;
+
+			// Sending no cookies
+			// The request returns an  expected error that the query 
+			// cannot be found. This is correct as the permission of the 
+			// query is not public and is only accessible to admins
+			fetch('http://localhost:3002/v1/graphql', {
+			  method: 'POST',
+			  headers: {
+			    'Content-Type': 'application/json',
+			    'Accept': 'application/json',
+			  },
+			  credentials: 'include',
+			  body: JSON.stringify({
+			    query,
+			    variables: {  },
+			  })
+			})
+			  .then(r => r.json())
+			  .then(data => document.write('data returned:', JSON.stringify(data)));
+		</script>
+	</head>
+	<body>
+		<h1>Request - With No Tokens</h1>
+	</body>
+</html>
